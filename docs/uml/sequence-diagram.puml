@@ -1,0 +1,74 @@
+@startuml sequence-diagram
+' Sequence diagram: starting a focus session, letting it run to 00:00, and saving it.
+title Pomodoro Habit Tracker - Start, complete and save a focus session
+
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+autonumber
+
+actor "Student" as User
+participant "Browser\n(app.js)" as Browser
+participant "TimerController" as Controller
+participant "TimerService" as Service
+participant "HabitService" as Habits
+participant "PomodoroTimer" as Timer
+participant "Background worker\n(once per second)" as Worker
+participant "JsonDataRepository" as Repo
+database "data/app-data.json" as File
+
+== Start a focus session ==
+User -> Browser : choose habit "Study Java",\nclick **Start**
+Browser -> Controller : POST /api/timer/start\n{"habitId": 3}
+activate Controller
+Controller -> Service : start(3)
+activate Service
+Service -> Habits : getHabit(3)
+Habits --> Service : Habit "Study Java"
+Service -> Timer : start(3, "Study Java", now)
+note right of Timer
+  status = RUNNING
+  endsAt = now + 25 minutes
+end note
+Service --> Controller
+deactivate Service
+Controller --> Browser : 200 OK\n{message, timer: RUNNING, remainingSeconds: 1500}
+deactivate Controller
+Browser -> User : shows 25:00 counting down
+
+== While the timer runs ==
+loop every 5 seconds
+  Browser -> Controller : GET /api/timer
+  Controller -> Service : getTimer()\n(checks for completion first)
+  Controller -> Timer : getRemainingSeconds(now)\n(inside TimerView.from)
+  Controller --> Browser : TimerView (status, remainingSeconds)
+end
+note over Browser
+  Between these updates the page counts down
+  by itself; the real time is kept in Java.
+end note
+
+loop every second
+  Worker -> Service : checkForCompletion()
+  Service -> Timer : finishIfTimeIsUp(now)
+  Timer --> Service : false (time is not up yet)
+end
+
+== The timer reaches 00:00 ==
+Worker -> Service : checkForCompletion()
+activate Service
+Service -> Timer : finishIfTimeIsUp(now)
+Timer --> Service : true\n(status = FINISHED, finishedAt = endsAt)
+Service -> Repo : nextSessionId()
+Service -> Repo : addSession(PomodoroSession(id, 3, "Study Java",\n25, startedAt, finishedAt))
+Service -> Repo : save()
+activate Repo
+Repo -> File : write app-data.json.tmp,\nthen rename to app-data.json
+deactivate Repo
+deactivate Service
+
+Browser -> Controller : GET /api/timer
+Controller --> Browser : TimerView (status: FINISHED,\nlastSavedSession)
+Browser -> User : beep + "Focus session complete and saved"
+Browser -> Browser : loadAll(): GET /api/habits and\nGET /api/dashboard (DashboardController)
+Browser -> User : updated statistics and\nrecent focus sessions
+@enduml

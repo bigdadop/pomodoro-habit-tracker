@@ -1,0 +1,66 @@
+@startuml use-case-diagram
+' Use case diagram: what a user can do with the Pomodoro Habit Tracker.
+title Pomodoro Habit Tracker - Use Case Diagram
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor "Student\n(user)" as User
+actor "Background\ntimer check" as Clock <<system>>
+
+rectangle "Pomodoro Habit Tracker" {
+  usecase "View dashboard\n(stats, today's habits,\nrecent sessions)" as UC_Dashboard
+  usecase "View streaks\n(current and best)" as UC_Streaks
+
+  usecase "Create habit" as UC_Create
+  usecase "Edit habit" as UC_Edit
+  usecase "Delete habit" as UC_Delete
+  usecase "Validate habit name" as UC_Validate
+  usecase "Confirm deletion" as UC_Confirm
+  usecase "Mark habit done today" as UC_Complete
+  usecase "Undo today's completion" as UC_Undo
+
+  usecase "Choose timer mode\n(Focus 25 / Short break 5 /\nLong break 15 min)" as UC_Mode
+  usecase "Start timer" as UC_Start
+  usecase "Link focus session\nto a habit" as UC_Link
+  usecase "Pause / Resume timer" as UC_Pause
+  usecase "Reset timer" as UC_Reset
+  usecase "Record completed\nfocus session" as UC_Record
+
+  usecase "Save data to\napp-data.json" as UC_Save
+}
+
+User --> UC_Dashboard
+User --> UC_Create
+User --> UC_Edit
+User --> UC_Delete
+User --> UC_Complete
+User --> UC_Undo
+User --> UC_Mode
+User --> UC_Start
+User --> UC_Pause
+User --> UC_Reset
+
+Clock --> UC_Record
+
+UC_Dashboard ..> UC_Streaks : <<include>>
+UC_Create ..> UC_Validate : <<include>>
+UC_Edit ..> UC_Validate : <<include>>
+UC_Delete ..> UC_Confirm : <<include>>
+UC_Link ..> UC_Start : <<extend>>
+
+UC_Create ..> UC_Save : <<include>>
+UC_Edit ..> UC_Save : <<include>>
+UC_Delete ..> UC_Save : <<include>>
+UC_Complete ..> UC_Save : <<include>>
+UC_Undo ..> UC_Save : <<include>>
+UC_Record ..> UC_Save : <<include>>
+
+note right of UC_Record
+  The Java app checks the timer once per second.
+  When a focus session reaches 00:00 it is saved,
+  even if no browser window is open.
+end note
+@enduml

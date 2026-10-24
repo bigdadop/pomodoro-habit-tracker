@@ -1,0 +1,29 @@
+# ----- Build output (Maven) -----
+target/
+
+# ----- Your personal app data (habits and sessions) -----
+# The data folder is kept in the repository (via .gitkeep), its content is not.
+data/*
+!data/.gitkeep
+
+# ----- Local environments -----
+.conda/
+.venv/
+venv/
+env/
+
+# ----- Logs and local settings -----
+*.log
+logs/
+.env
+
+# ----- IDE and operating system files -----
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+out/
+.DS_Store
+Thumbs.db

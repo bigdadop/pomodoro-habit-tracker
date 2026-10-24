@@ -1,0 +1,211 @@
+@startuml class-diagram
+' Class diagram: the main classes of the application and how they are connected.
+' Only the most important fields and methods are shown.
+title Pomodoro Habit Tracker - Class Diagram
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+set separator none
+
+package "com.pomodorotracker" {
+  class Main {
+    + {static} main(args : String[]) : void
+  }
+  class AppServer {
+    - httpServer : HttpServer
+    - worker : ScheduledExecutorService
+    + AppServer(config : AppConfig, clock : Clock)
+    + start() : void
+    + stop() : void
+    + getPort() : int
+  }
+}
+
+package "com.pomodorotracker.controller" {
+  interface HttpHandler <<JDK>> {
+    + handle(exchange : HttpExchange) : void
+  }
+  abstract class BaseController {
+    + handle(exchange : HttpExchange) : void
+    # {abstract} handleRequest(exchange : HttpExchange) : void
+    # sendJson(exchange, status : int, body : Object) : void
+    # sendError(exchange, status : int, message : String) : void
+    # readJson(exchange, type : Class<T>) : T
+    # parseId(text : String) : int
+  }
+  class HabitController
+  class TimerController
+  class DashboardController
+  class HealthController
+  class StaticFileController
+}
+
+package "com.pomodorotracker.service" {
+  class HabitService {
+    - clock : Clock
+    + today() : LocalDate
+    + getAllHabits() : List<Habit>
+    + getHabit(id : int) : Habit
+    + createHabit(name : String, description : String) : Habit
+    + updateHabit(id : int, name : String, description : String) : Habit
+    + deleteHabit(id : int) : void
+    + markCompletedToday(id : int) : boolean
+    + undoCompletionToday(id : int) : boolean
+    + getCurrentStreak(habit : Habit) : int
+    + getLongestStreak(habit : Habit) : int
+    + countCompletedToday() : int
+    + countActiveStreaks() : int
+  }
+  class StreakService {
+    + calculateCurrentStreak(dates : Set<LocalDate>, today : LocalDate) : int
+    + calculateLongestStreak(dates : Set<LocalDate>) : int
+  }
+  class TimerService {
+    - timer : PomodoroTimer
+    - lastSavedSession : PomodoroSession
+    - clock : Clock
+    + selectMode(mode : TimerMode) : void
+    + start(habitId : Integer) : void
+    + pause() : void
+    + resume() : void
+    + reset() : void
+    + checkForCompletion() : boolean
+    + getRecentSessions(limit : int) : List<PomodoroSession>
+  }
+  class NotFoundException
+  class RuntimeException <<JDK>>
+}
+
+package "com.pomodorotracker.repository" {
+  class JsonDataRepository {
+    - dataFile : Path
+    - data : AppData
+    + findAllHabits() : List<Habit>
+    + findHabitById(id : int) : Optional<Habit>
+    + addHabit(habit : Habit) : void
+    + deleteHabit(id : int) : boolean
+    + findAllSessions() : List<PomodoroSession>
+    + addSession(session : PomodoroSession) : void
+    + save() : void
+    - load() : AppData
+  }
+}
+
+package "com.pomodorotracker.model" {
+  class AppData {
+    - nextHabitId : int
+    - nextSessionId : int
+    + takeNextHabitId() : int
+    + takeNextSessionId() : int
+    + removeInvalidEntries() : void
+  }
+  class Habit {
+    - id : int
+    - name : String
+    - description : String
+    - createdOn : LocalDate
+    - completionDates : SortedSet<LocalDate>
+    + {static} cleanName(name : String) : String
+    + markCompleted(date : LocalDate) : boolean
+    + unmarkCompleted(date : LocalDate) : boolean
+    + isCompletedOn(date : LocalDate) : boolean
+  }
+  class PomodoroSession <<record>> {
+    id : int
+    habitId : Integer
+    habitName : String
+    durationMinutes : int
+    startedAt : Instant
+    completedAt : Instant
+  }
+  class PomodoroTimer {
+    - mode : TimerMode
+    - status : TimerStatus
+    - endsAt : Instant
+    - pausedRemaining : Duration
+    + selectMode(mode : TimerMode) : void
+    + start(habitId : Integer, habitName : String, now : Instant) : void
+    + pause(now : Instant) : void
+    + resume(now : Instant) : void
+    + reset() : void
+    + finishIfTimeIsUp(now : Instant) : boolean
+    + getRemaining(now : Instant) : Duration
+  }
+  enum TimerMode {
+    FOCUS (25 min)
+    SHORT_BREAK (5 min)
+    LONG_BREAK (15 min)
+  }
+  enum TimerStatus {
+    IDLE
+    RUNNING
+    PAUSED
+    FINISHED
+  }
+}
+
+package "com.pomodorotracker.view" {
+  class HabitView <<record>>
+  class TimerView <<record>>
+  class DashboardView <<record>>
+}
+
+package "com.pomodorotracker.util" {
+  class AppConfig <<record>> {
+    host : String
+    port : int
+    dataDirectory : Path
+    + {static} fromEnvironment(env : Map) : AppConfig
+  }
+  class JsonUtil {
+    + {static} toJson(value : Object) : String
+    + {static} fromJson(json : String, type : Class<T>) : T
+  }
+}
+
+' ----- Inheritance and interfaces -----
+HttpHandler <|.. BaseController
+BaseController <|-- HabitController
+BaseController <|-- TimerController
+BaseController <|-- DashboardController
+BaseController <|-- HealthController
+BaseController <|-- StaticFileController
+RuntimeException <|-- NotFoundException
+
+' ----- Who creates / uses whom -----
+Main ..> AppConfig : reads
+Main --> AppServer : starts
+AppServer --> "5" BaseController : registers
+
+note right of AppServer
+  Creates the repository, the services
+  and the controllers, and connects them.
+end note
+
+HabitController --> HabitService
+HabitController --> TimerService
+TimerController --> TimerService
+DashboardController --> HabitService
+DashboardController --> TimerService
+HabitController ..> HabitView : builds
+TimerController ..> TimerView : builds
+DashboardController ..> DashboardView : builds
+BaseController ..> JsonUtil : uses
+BaseController ..> NotFoundException : turns into 404
+
+HabitService --> JsonDataRepository
+HabitService --> StreakService
+TimerService --> JsonDataRepository
+TimerService --> HabitService
+TimerService *-- "1" PomodoroTimer
+HabitService ..> NotFoundException : throws
+
+JsonDataRepository *-- "1" AppData
+JsonDataRepository ..> JsonUtil : uses
+AppData *-- "0..*" Habit
+AppData *-- "0..*" PomodoroSession
+PomodoroTimer --> TimerMode
+PomodoroTimer --> TimerStatus
+@enduml

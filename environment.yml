@@ -1,0 +1,16 @@
+# Conda environment for the Pomodoro Habit Tracker.
+#
+# It installs Java 21 (OpenJDK) and Maven from the conda-forge channel, so you do
+# not need to install or configure Java yourself. It works on Linux, macOS and
+# Windows because it only names packages, never folders on your computer.
+#
+# You normally don't run this by hand: run.sh, run.bat and run.ps1 create the
+# environment automatically the first time. To create it manually:
+#   conda env create -f environment.yml
+name: pomodoro-habit-tracker
+channels:
+  - conda-forge
+  - nodefaults        # use only conda-forge (no Anaconda "defaults" channel)
+dependencies:
+  - openjdk=21        # Java 21 (any 21.x update)
+  - maven=3.9         # Maven 3.9.x build tool

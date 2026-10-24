@@ -1,0 +1,5 @@
+# Keep the right line endings for each kind of script, on every operating system.
+*.sh   text eol=lf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf

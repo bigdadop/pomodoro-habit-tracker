@@ -1,0 +1,37 @@
+# Files that Docker does not need to build the image.
+# The Dockerfile only uses pom.xml and src/, so everything else stays out.
+
+# Build output (Docker builds its own JAR)
+target/
+
+# Your local data - it must never be baked into the image
+data/
+
+# Version control, IDE and OS files
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local environments, logs and secrets
+.env
+.conda/
+.venv/
+env/
+*.log
+logs/
+
+# Documentation and scripts are not needed inside the image
+docs/
+README.md
+run.sh
+run.bat
+run.ps1
+environment.yml
+compose.yaml
+Dockerfile
+.dockerignore

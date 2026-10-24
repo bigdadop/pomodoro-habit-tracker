@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pomodoro Habit Tracker</title>
+  <!-- A tomato emoji as the tab icon, so we need no image files -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍅</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <div>
+        <h1><span aria-hidden="true">🍅</span> Pomodoro Habit Tracker</h1>
+        <p class="welcome">Welcome! Build good habits, one focused session at a time.</p>
+      </div>
+      <p class="today" id="today-label"></p>
+    </div>
+    <nav class="container tabs" aria-label="Main sections">
+      <button type="button" class="tab" data-view="dashboard">Dashboard</button>
+      <button type="button" class="tab" data-view="habits">Manage habits</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+    <p id="date-warning" class="note warning" hidden></p>
+
+    <!-- ================= Dashboard ================= -->
+    <section id="view-dashboard" class="view">
+      <div class="stats">
+        <div class="card stat">
+          <span class="stat-label">Total habits</span>
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-note">being tracked</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-label">Done today</span>
+          <span class="stat-value" id="stat-done">0 / 0</span>
+          <div class="progress" aria-hidden="true"><div class="progress-bar success" id="stat-done-bar"></div></div>
+        </div>
+        <div class="card stat">
+          <span class="stat-label">Active streaks</span>
+          <span class="stat-value" id="stat-streaks">0</span>
+          <span class="stat-note" id="stat-best">Best streak: 0 days</span>
+        </div>
+        <div class="card stat">
+          <span class="stat-label">Focus sessions</span>
+          <span class="stat-value" id="stat-sessions">0</span>
+          <span class="stat-note" id="stat-sessions-today">Today: 0 (0 min)</span>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Pomodoro timer -->
+        <article class="card timer-card" aria-labelledby="timer-title">
+          <h2 id="timer-title">Pomodoro timer</h2>
+          <div class="modes" id="mode-buttons" role="group" aria-label="Timer mode"></div>
+          <div class="timer-display" id="timer-display">--:--</div>
+          <div class="progress timer-progress" aria-hidden="true"><div class="progress-bar" id="timer-bar"></div></div>
+          <p class="timer-status" id="timer-status">Loading timer...</p>
+
+          <label for="timer-habit">Habit for this focus session (optional)</label>
+          <select id="timer-habit">
+            <option value="">No habit</option>
+          </select>
+
+          <div class="timer-controls">
+            <button type="button" class="btn primary" id="btn-start">Start</button>
+            <button type="button" class="btn" id="btn-pause">Pause</button>
+            <button type="button" class="btn" id="btn-resume">Resume</button>
+            <button type="button" class="btn" id="btn-reset">Reset</button>
+          </div>
+          <p class="note">
+            The timer runs inside the Java application, so refreshing this page is safe.
+            If the application is stopped, an unfinished timer is cleared and not saved.
+          </p>
+        </article>
+
+        <!-- Today's habits -->
+        <article class="card" aria-labelledby="today-title">
+          <h2 id="today-title">Today's habits</h2>
+          <ul class="today-list" id="today-list"></ul>
+          <div class="empty" id="today-empty" hidden>
+            <p>You have no habits yet.</p>
+            <button type="button" class="btn primary" data-goto="habits">Add your first habit</button>
+          </div>
+        </article>
+      </div>
+
+      <!-- Recent sessions -->
+      <article class="card" aria-labelledby="sessions-title">
+        <h2 id="sessions-title">Recent focus sessions</h2>
+        <div class="table-wrap" id="sessions-wrap" hidden>
+          <table>
+            <thead>
+              <tr><th scope="col">Habit</th><th scope="col">Length</th><th scope="col">Completed</th></tr>
+            </thead>
+            <tbody id="sessions-body"></tbody>
+          </table>
+        </div>
+        <p class="empty" id="sessions-empty">No focus sessions yet. Start the timer to record your first one.</p>
+      </article>
+    </section>
+
+    <!-- ================= Manage habits ================= -->
+    <section id="view-habits" class="view" hidden>
+      <article class="card" aria-labelledby="form-title">
+        <h2 id="form-title">Add a new habit</h2>
+        <form id="habit-form" novalidate>
+          <label for="habit-name">Habit name <span class="required">(required)</span></label>
+          <input id="habit-name" name="name" type="text" maxlength="50" autocomplete="off"
+                 placeholder="e.g. Read 10 pages">
+
+          <label for="habit-description">Description <span class="optional">(optional)</span></label>
+          <textarea id="habit-description" name="description" maxlength="200" rows="2"
+                    placeholder="e.g. Before going to bed"></textarea>
+
+          <p class="form-error" id="form-error" role="alert" hidden></p>
+          <div class="form-actions">
+            <button type="submit" class="btn primary" id="form-submit">Add habit</button>
+            <button type="button" class="btn" id="form-cancel" hidden>Cancel</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card" aria-labelledby="list-title">
+        <h2 id="list-title">All habits <span class="count" id="habit-count"></span></h2>
+        <ul class="habit-list" id="habit-list"></ul>
+        <p class="empty" id="habits-empty" hidden>
+          You have no habits yet. Start with something small, like "Drink a glass of water".
+        </p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    Your data is saved on this computer in <code>data/app-data.json</code>.
+    Pomodoro Habit Tracker &middot; a Java 21 college project.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

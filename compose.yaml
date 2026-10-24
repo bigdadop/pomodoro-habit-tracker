@@ -1,0 +1,32 @@
+# Pomodoro Habit Tracker with Docker Compose.
+#
+#   Start:   docker compose up --build        then open http://127.0.0.1:8080
+#   Stop:    Ctrl+C   (or "docker compose down" from another terminal)
+#
+# Your habits and sessions are stored in the named volume "pomodoro-data",
+# outside the image, so they survive restarts, rebuilds and "docker compose down".
+# Only "docker compose down -v" deletes them.
+name: pomodoro-habit-tracker
+
+services:
+  app:
+    build: .
+    image: pomodoro-habit-tracker:latest
+    ports:
+      # Published on 127.0.0.1 only, so the app is reachable from this computer
+      # but not from other devices on your network. Change HOST_PORT in a .env
+      # file if port 8080 is already used on your computer.
+      - "127.0.0.1:${HOST_PORT:-8080}:8080"
+    environment:
+      APP_HOST: "0.0.0.0"     # listen on all addresses inside the container
+      APP_PORT: "8080"
+      APP_DATA_DIR: /app/data
+      # The container uses UTC unless you set your time zone, for example
+      # TZ=Asia/Kolkata in a .env file next to this compose.yaml. It decides
+      # which calendar day "today" is for your habits and streaks.
+      TZ: ${TZ:-UTC}
+    volumes:
+      - pomodoro-data:/app/data
+
+volumes:
+  pomodoro-data:
